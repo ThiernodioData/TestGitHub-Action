@@ -19,12 +19,21 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: mbstring, xml, ctype, json
 
-      - name: Install quality tools
-        run: composer require --dev phpstan/phpstan laravel/pint
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Static analysis (PHPStan)
-        run: vendor/bin/phpstan analyse --level=max app/
+        run: vendor/bin/phpstan analyse
         continue-on-error: true
 
       - name: Code style check (Pint)

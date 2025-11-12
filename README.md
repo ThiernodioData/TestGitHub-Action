@@ -12,13 +12,13 @@ Projet de TP sur GitHub Actions - Tests automatisés avec PHP
 
 ### Étape 1 : Créer le dépôt GitHub
 
-1. Créez un nouveau dépôt sur GitHub (nommez-le `github-test-tp-2025`)
+1. Créez un nouveau dépôt sur GitHub (nommez-le `TpGitHubAction`)
 2. Cochez "Add a README file" lors de la création
-3. Clonez le dépôt :
+3. Ou clonez le dépôt :
 
 ```bash
-git clone https://github.com/VOTRE-USERNAME/github-test-tp-2025.git
-cd github-test-tp-2025
+git clone https://github.com/ThiernodioData/TestGitHub-Action
+cd TpGitHubAction
 ```
 
 ### Étape 2 : Créer la structure du projet
@@ -164,6 +164,6 @@ En cas de problème, vérifiez :
 
 ---
 
-**Fait par :** Votre nom  
+**Fait par :** ThiernodjoData  
 **Date :** 2025-2026  
 **Contexte :** TP GitHub Actions - Formation Test Logiciel
