@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Composer install
+    name: Build & Install Dependencies
     runs-on: ubuntu-latest
 
     steps:
@@ -19,18 +19,26 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: mbstring, xml, ctype, json
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
-
-      - name: Cache vendor
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Verify installation
+        run: |
+          echo "✓ Dependencies installed successfully"
+          ls -la vendor/bin/
 
   phpstan-pint:
-    name: PHPStan & Pint
+    name: Code Quality (PHPStan & Pint)
     needs: build
     runs-on: ubuntu-latest
 
@@ -42,9 +50,18 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: mbstring, xml, ctype, json
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse --level=max app/
@@ -55,7 +72,7 @@ jobs:
         continue-on-error: true
 
   phpunit:
-    name: PHPUnit
+    name: PHPUnit Tests
     needs: build
     runs-on: ubuntu-latest
 
@@ -68,42 +85,53 @@ jobs:
         with:
           php-version: '8.2'
           coverage: xdebug
+          extensions: mbstring, xml, ctype, json
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: Run PHPUnit
+      - name: Run PHPUnit with Coverage
         run: vendor/bin/phpunit --coverage-clover=coverage.xml
 
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            report.xml
+
   coverage-report:
-    name: Rapport de couverture
+    name: Coverage Report Summary
     needs: phpunit
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
         with:
-          php-version: '8.2'
-          coverage: xdebug
+          name: coverage-report
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
-
-      - name: Generate coverage
-        run: vendor/bin/phpunit --coverage-clover=coverage.xml
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage.xml
+      - name: Display coverage summary
+        run: |
+          echo "📊 Coverage Report Generated"
+          if [ -f coverage.xml ]; then
+            echo "✓ Coverage XML file created"
+            ls -lh coverage.xml
+          else
+            echo "⚠ Coverage file not found"
+          fi
 
   deploy:
-    name: Déploiement automatique
+    name: Deploy to Production
     needs: [phpstan-pint, phpunit, coverage-report]
     runs-on: ubuntu-latest
     if: success() && github.ref == 'refs/heads/main'
@@ -112,8 +140,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy if success
+      - name: Deploy application
         run: |
-          echo "✓ Déploiement réussi"
-          echo "✓ Toutes les étapes sont passées"
+          echo "🚀 Déploiement en cours..."
+          echo "✓ Toutes les étapes sont passées avec succès"
+          echo "✓ Branch: ${{ github.ref }}"
+          echo "✓ Commit: ${{ github.sha }}"
           echo "En production: curl -X POST \${{ secrets.DEPLOY_HOOK }}"
+          echo "✓ Déploiement réussi!"

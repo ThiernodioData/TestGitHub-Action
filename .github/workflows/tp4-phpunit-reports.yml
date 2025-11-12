@@ -20,9 +20,18 @@ jobs:
         with:
           php-version: '8.2'
           coverage: xdebug
+          extensions: mbstring, xml, ctype, json
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Run PHPUnit with coverage
         run: vendor/bin/phpunit --coverage-clover=coverage.xml --log-junit=report.xml

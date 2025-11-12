@@ -17,18 +17,27 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: mbstring, xml, ctype, json
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Run tests
         run: vendor/bin/phpunit
 
   deploy:
-    name: Deploy to Render
+    name: Deploy to production
     needs: tests
     runs-on: ubuntu-latest
-    if: success()
+    if: success() && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -36,7 +45,7 @@ jobs:
 
       - name: Deploy to hosting
         run: |
-          echo "Déploiement simulé réussi"
+          echo "🚀 Déploiement simulé réussi"
           echo "En production, utilisez: curl -X POST \${{ secrets.DEPLOY_HOOK }}"
           
       - name: Deployment notification
@@ -44,3 +53,4 @@ jobs:
           echo "✓ Le déploiement ne s'exécute que si les tests réussissent"
           echo "✓ Branch: ${{ github.ref }}"
           echo "✓ Commit: ${{ github.sha }}"
+          echo "✓ Deployed successfully!"

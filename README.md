@@ -106,8 +106,11 @@ composer install
 # Lancer les tests
 vendor/bin/phpunit
 
+# Lancer les tests avec couverture
+vendor/bin/phpunit --coverage-clover=coverage.xml
+
 # Vérifier le code avec PHPStan
-vendor/bin/phpstan analyse --level=max app/
+vendor/bin/phpstan analyse
 
 # Vérifier le style avec Pint
 vendor/bin/pint --test
@@ -133,6 +136,23 @@ Si un workflow échoue :
 2. Assurez-vous que tous les secrets sont configurés
 3. Vérifiez que la structure des fichiers est correcte
 4. Relancez le workflow manuellement si nécessaire
+
+### Problèmes courants et solutions
+
+**TP9 et TP10 échouent ?**
+- ✅ **Corrigé** : Cache Composer est maintenant placé AVANT l'installation
+- ✅ **Corrigé** : Chaque job restaure correctement le cache
+- ✅ **Corrigé** : Les extensions PHP nécessaires sont installées
+- ✅ **Corrigé** : Le déploiement ne s'exécute que sur la branche `main`
+
+**Erreur "vendor/bin/phpstan not found" ?**
+- Assurez-vous que `composer install` s'est exécuté correctement
+- Vérifiez que `phpstan.neon` existe à la racine du projet
+
+**Les tests passent en local mais échouent sur GitHub ?**
+- Vérifiez la version de PHP (8.2+)
+- Assurez-vous que toutes les extensions PHP sont installées
+- Vérifiez les permissions des fichiers
 
 ## 📞 Aide
 
