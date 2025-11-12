@@ -1,0 +1,39 @@
+name: TP5 - Laravel CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  laravel-tests:
+    name: Laravel Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, pdo, sqlite
+
+      - name: Setup .env
+        run: cp .env.example .env
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Generate app key
+        run: |
+          if [ -f artisan ]; then
+            php artisan key:generate
+          else
+            echo "Not a Laravel project, skipping key generation"
+          fi
+
+      - name: Run Laravel tests
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml

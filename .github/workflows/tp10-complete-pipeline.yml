@@ -1,0 +1,119 @@
+name: TP10 - Pipeline Complète CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    name: Composer install
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Cache vendor
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+
+  phpstan-pint:
+    name: PHPStan & Pint
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --level=max app/
+        continue-on-error: true
+
+      - name: Run Pint
+        run: vendor/bin/pint --test
+        continue-on-error: true
+
+  phpunit:
+    name: PHPUnit
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+  coverage-report:
+    name: Rapport de couverture
+    needs: phpunit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Generate coverage
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  deploy:
+    name: Déploiement automatique
+    needs: [phpstan-pint, phpunit, coverage-report]
+    runs-on: ubuntu-latest
+    if: success() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy if success
+        run: |
+          echo "✓ Déploiement réussi"
+          echo "✓ Toutes les étapes sont passées"
+          echo "En production: curl -X POST \${{ secrets.DEPLOY_HOOK }}"

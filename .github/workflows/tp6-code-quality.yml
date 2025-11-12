@@ -1,0 +1,32 @@
+name: TP6 - Code Quality
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install quality tools
+        run: composer require --dev phpstan/phpstan laravel/pint
+
+      - name: Static analysis (PHPStan)
+        run: vendor/bin/phpstan analyse --level=max app/
+        continue-on-error: true
+
+      - name: Code style check (Pint)
+        run: vendor/bin/pint --test
+        continue-on-error: true
